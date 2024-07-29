@@ -28,6 +28,8 @@ class ProductResource extends Resource
 
     protected static ?string $modelLabel = 'Your Products';
 
+    protected static ?string $navigationGroup = 'System';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -112,18 +114,23 @@ class ProductResource extends Resource
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('active')
+                    ->label('Status')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_hot')
+                    ->label('Hot')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('created date')
+                    ->dateTime('j F, Y, g:i A')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('updated date')
+                    ->dateTime('j F, Y, g:i A')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
