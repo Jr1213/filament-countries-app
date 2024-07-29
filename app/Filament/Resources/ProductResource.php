@@ -12,6 +12,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
 
 class ProductResource extends Resource
 {
@@ -28,37 +31,63 @@ class ProductResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('price')
-                    ->required()
-                    ->numeric()
-                    ->prefix('$'),
-                Forms\Components\TextInput::make('discount')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\FileUpload::make('image')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('stock')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('score')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\Toggle::make('active')
-                    ->required(),
-                Forms\Components\Toggle::make('is_hot')
-                    ->required(),
-            ]);
+                Tabs::make('Tabs')->tabs([
+                    Tab::make('Product Information')->schema([
+                        Fieldset::make('Product Information')->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\Textarea::make('description')
+                                ->required()
+                                ->columnSpanFull(),
+
+                            Forms\Components\FileUpload::make('image')
+                                ->required()
+                                ->columnSpanFull(),
+                        ])->columns(1),
+                    ]),
+                    Tab::make('Product Price')
+                        ->schema([
+                            Fieldset::make('Product Price')->schema([
+                                Forms\Components\TextInput::make('price')
+                                    ->required()
+                                    ->numeric()
+                                    ->prefix('$'),
+                                Forms\Components\TextInput::make('discount')
+                                    ->required()
+                                    ->numeric()
+                                    ->prefix('$'),
+                            ]),
+                        ]),
+                    Tab::make('Product Status')
+                        ->schema([
+                            Fieldset::make('Product Status')->schema([
+                                Forms\Components\Toggle::make('active')
+                                    ->required(),
+                                Forms\Components\Toggle::make('is_hot')
+                                    ->required(),
+                            ])
+                        ]),
+                    Tab::make('Product Number')
+                        ->schema([
+                            Forms\Components\TextInput::make('stock')
+                                ->required()
+                                ->numeric(),
+                            Forms\Components\TextInput::make('score')
+                                ->required()
+                                ->numeric(),
+                        ]),
+                    Tab::make('User')
+                        ->schema([
+
+                            Forms\Components\Select::make('user_id')
+                                ->relationship('user', 'name')
+                                ->required(),
+                        ])
+                ])
+            ])->columns(1);
     }
 
     public static function table(Table $table): Table
