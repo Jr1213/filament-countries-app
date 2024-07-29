@@ -13,8 +13,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Fieldset;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Filters\QueryBuilder;
+use Filament\Tables\Filters\QueryBuilder\Constraints\RelationshipConstraint;
+use Filament\Tables\Filters\QueryBuilder\Constraints\RelationshipConstraint\Operators\IsRelatedToOperator;
 
 class ProductResource extends Resource
 {
@@ -29,6 +34,11 @@ class ProductResource extends Resource
     protected static ?string $modelLabel = 'Your Products';
 
     protected static ?string $navigationGroup = 'System';
+
+    protected static function getTableQuery()
+    {
+        return Product::query()->where('user_id', auth()->id());
+    }
 
     public static function form(Form $form): Form
     {
@@ -47,8 +57,12 @@ class ProductResource extends Resource
 
                             Forms\Components\FileUpload::make('image')
                                 ->required()
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->disk('public')
+                                ->visibility('public')
+                                ->directory('products'),
                         ])->columns(1),
+                        Hidden::make('user_id')->default(auth()->id()),
                     ]),
                     Tab::make('Product Price')
                         ->schema([
@@ -81,13 +95,6 @@ class ProductResource extends Resource
                                 ->required()
                                 ->numeric(),
                         ]),
-                    Tab::make('User')
-                        ->schema([
-
-                            Forms\Components\Select::make('user_id')
-                                ->relationship('user', 'name')
-                                ->required(),
-                        ])
                 ])
             ])->columns(1);
     }
@@ -116,6 +123,7 @@ class ProductResource extends Resource
                 Tables\Columns\IconColumn::make('active')
                     ->label('Status')
                     ->boolean(),
+                ImageColumn::make('image_url')->circular(),
                 Tables\Columns\IconColumn::make('is_hot')
                     ->label('Hot')
                     ->boolean(),
@@ -137,6 +145,7 @@ class ProductResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -144,7 +153,8 @@ class ProductResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->query(self::getTableQuery());
     }
 
     public static function getRelations(): array
