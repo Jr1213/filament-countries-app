@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
-use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,10 +15,19 @@ use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
+use Filament\Infolists\Components\Fieldset as ComponentsFieldset;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Tabs as ComponentsTabs;
+use Filament\Infolists\Components\Tabs\Tab as TabsTab;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Filters\QueryBuilder;
-use Filament\Tables\Filters\QueryBuilder\Constraints\RelationshipConstraint;
-use Filament\Tables\Filters\QueryBuilder\Constraints\RelationshipConstraint\Operators\IsRelatedToOperator;
+use Filament\Tables\Filters\QueryBuilder\Constraints\NumberConstraint;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 
 class ProductResource extends Resource
 {
@@ -57,10 +65,11 @@ class ProductResource extends Resource
 
                             Forms\Components\FileUpload::make('image')
                                 ->required()
+                                ->image()
                                 ->columnSpanFull()
                                 ->disk('public')
                                 ->visibility('public')
-                                ->directory('products'),
+                                ->directory('images/products'),
                         ])->columns(1),
                         Hidden::make('user_id')->default(auth()->id()),
                     ]),
@@ -141,6 +150,15 @@ class ProductResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
+                TernaryFilter::make('active')
+                    ->label('only active products'),
+                TernaryFilter::make('is_hot')
+                ->label('only hot products'),
+                QueryBuilder::make('stock')
+                    ->constraints([
+                        NumberConstraint::make('stock')
+                    ])
+
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -180,5 +198,77 @@ class ProductResource extends Resource
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                ComponentsTabs::make('Product Information')->tabs([
+                    TabsTab::make('Product Information')->schema([
+                        ComponentsFieldset::make('Product Information')->schema([
+                            TextEntry::make('user.name')
+                            ->label('Owner'),
+                            TextEntry::make('name')
+                                ->label('Product Name'),
+
+                            TextEntry::make('description')
+                                ->label('Product Description'),
+                            ImageEntry::make('image_url')
+                                ->label('Product Image')
+                                ->columnSpanFull()
+
+                        ])->columns(1),
+                    ]),
+                    TabsTab::make('Product Price')->schema([
+                        ComponentsFieldset::make('Product Price')->schema([
+                            TextEntry::make('price')
+                                ->label('Product Price')
+                                ->money(),
+
+                            TextEntry::make('discount')
+                                ->label('Product Discount')
+                                ->money(),
+
+                        ])->columns(1),
+                    ]),
+                    TabsTab::make('Product Status')->schema([
+                        ComponentsFieldset::make('Product Status')->schema([
+                            IconEntry::make('active')
+                                ->label('Product Active')
+                                ->boolean()
+                                ->trueIcon('heroicon-o-check-badge')
+                                ->falseIcon('heroicon-o-x-mark'),
+
+                            IconEntry::make('is_hot')
+                                ->label('Product Is Hot')
+                                ->boolean()
+                                ->trueIcon('heroicon-o-check-badge')
+                                ->falseIcon('heroicon-o-x-mark'),
+
+                        ])->columns(2),
+                    ]),
+                    TabsTab::make('Product Numbers')->schema([
+                        ComponentsFieldset::make('Product Numbers')->schema([
+                            TextEntry::make('stock')
+                                ->label('Stock Count')
+                                ->numeric(),
+
+                            TextEntry::make('score')
+                                ->label('Product Score')
+                                ->numeric(),
+
+                        ]),
+                    ])
+                ])
+            ])->columns(1);
+    }
+
+    protected function afterCreate()
+    {
+        Notification::make()
+            ->title('Product Created')
+            ->success()
+            ->sendToDatabase(auth()->user());
     }
 }

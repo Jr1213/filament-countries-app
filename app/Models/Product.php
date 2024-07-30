@@ -33,4 +33,8 @@ class Product extends Model
     {
         return asset('storage/' . $this->image);
     }
+    public function getImagePathAttribute():string
+    {
+        return asset('storage/' . $this->image);
+    }
 }
