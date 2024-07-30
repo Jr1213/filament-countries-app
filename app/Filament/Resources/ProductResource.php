@@ -42,7 +42,7 @@ class ProductResource extends Resource
     protected static ?string $modelLabel = 'Your Products';
 
     protected static ?string $navigationGroup = 'System';
-
+    protected static ?int $navigationSort = 1;
     protected static function getTableQuery()
     {
         return Product::query()->where('user_id', auth()->id());
